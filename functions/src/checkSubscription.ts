@@ -38,7 +38,12 @@ export async function checkSubscriptionHandler(
   }
 
   const status = await fetchPlayStatus(productId, token);
-  const tier = status.expired ? "FREE" : PRODUCT_TIERS[productId];
+  // A user retains premium access while the current billing period is paid for,
+  // even after they hit "Cancel" in Play. Account hold and pause states revoke
+  // access immediately. We consider the subscription valid if a non-revoked
+  // Play state is reported AND the expiry is still in the future.
+  const accessActive = !status.expired && (status.expiryTimeMillis ?? 0) > Date.now();
+  const tier = accessActive ? PRODUCT_TIERS[productId] : "FREE";
 
   const result: VerifyResponse = {
     tier,
@@ -94,10 +99,15 @@ async function fetchPlayStatus(productId: string, purchaseToken: string): Promis
   const expiryTimeIso = (matching?.expiryTime as string | undefined) ?? null;
   const expiryTimeMillis = expiryTimeIso ? Date.parse(expiryTimeIso) : null;
   const subscriptionState = (data?.subscriptionState as string | undefined) ?? "SUBSCRIPTION_STATE_UNSPECIFIED";
+  // EXPIRED/PAUSED/ON_HOLD revoke access. CANCELED still grants access until
+  // the period ends; IN_GRACE_PERIOD grants access while the user updates
+  // payment.
+  const expired =
+    subscriptionState === "SUBSCRIPTION_STATE_EXPIRED" ||
+    subscriptionState === "SUBSCRIPTION_STATE_PAUSED" ||
+    subscriptionState === "SUBSCRIPTION_STATE_ON_HOLD";
   return {
-    expired:
-      subscriptionState === "SUBSCRIPTION_STATE_EXPIRED" ||
-      subscriptionState === "SUBSCRIPTION_STATE_CANCELED",
+    expired,
     expiryTimeMillis,
     autoRenewing: subscriptionState === "SUBSCRIPTION_STATE_ACTIVE",
     inGracePeriod: subscriptionState === "SUBSCRIPTION_STATE_IN_GRACE_PERIOD",

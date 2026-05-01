@@ -31,6 +31,7 @@ import javax.inject.Singleton
 import kotlin.coroutines.resume
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -84,8 +85,9 @@ class SubscriptionRepositoryImpl @Inject constructor(
         activity: Activity,
         productId: String,
         basePlanId: String?,
-    ): Result<Unit> = withContext(ioDispatcher) {
-        runCatching {
+    ): Result<Unit> = runCatching {
+        // Network/IO setup happens off the main thread...
+        val params = withContext(ioDispatcher) {
             ensureConnected()
             val productDetails = queryProductDetails(productId)
                 ?: error("Product $productId not found")
@@ -93,7 +95,7 @@ class SubscriptionRepositoryImpl @Inject constructor(
                 ?.firstOrNull { basePlanId == null || it.basePlanId == basePlanId }
                 ?.offerToken
                 ?: error("No offer token for $productId")
-            val params = BillingFlowParams.newBuilder()
+            BillingFlowParams.newBuilder()
                 .setProductDetailsParamsList(
                     listOf(
                         BillingFlowParams.ProductDetailsParams.newBuilder()
@@ -103,10 +105,13 @@ class SubscriptionRepositoryImpl @Inject constructor(
                     )
                 )
                 .build()
-            val result = billingClient.launchBillingFlow(activity, params)
-            if (result.responseCode != BillingClient.BillingResponseCode.OK) {
-                error("launchBillingFlow failed: ${result.debugMessage}")
-            }
+        }
+        // ...but launchBillingFlow must run on the main thread (it shows UI).
+        val result = withContext(Dispatchers.Main.immediate) {
+            billingClient.launchBillingFlow(activity, params)
+        }
+        if (result.responseCode != BillingClient.BillingResponseCode.OK) {
+            error("launchBillingFlow failed: ${result.debugMessage}")
         }
     }
 

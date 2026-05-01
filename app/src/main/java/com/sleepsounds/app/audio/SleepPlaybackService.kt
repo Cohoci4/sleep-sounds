@@ -150,7 +150,9 @@ class SleepPlaybackService : MediaSessionService() {
 
     override fun onDestroy() {
         scope.cancel()
-        primarySession?.run { player.release(); release() }
+        // MediaSession.release() does not release its underlying Player; the
+        // primary player is owned by the `players` map and released below.
+        primarySession?.release()
         primarySession = null
         players.values.forEach { it.release() }
         players.clear()

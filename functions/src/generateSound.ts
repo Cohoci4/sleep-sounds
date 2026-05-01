@@ -33,35 +33,43 @@ export async function generateSoundHandler(
     throw new HttpsError("invalid-argument", "userId required");
   }
 
-  await assertQuota(userId);
   await assertSubscription(userId);
+  // Atomically check + reserve a quota slot before doing any expensive AI
+  // work. If two requests race only one will succeed.
+  await reserveQuotaSlot(userId);
 
   const generationId = randomUUID();
-  const cover = await generateCover(prompt, generationId);
-  const audio = await generateAudio(prompt, generationId);
-  const title = sanitizeTitle(prompt);
+  let result: GenerateResponse;
+  try {
+    const cover = await generateCover(prompt, generationId);
+    const audio = await generateAudio(prompt, generationId);
+    const title = sanitizeTitle(prompt);
 
-  const result: GenerateResponse = {
-    id: generationId,
-    audioUrl: audio.publicUrl,
-    coverUrl: cover.publicUrl,
-    title,
-    durationSeconds: audio.durationSeconds,
-  };
+    result = {
+      id: generationId,
+      audioUrl: audio.publicUrl,
+      coverUrl: cover.publicUrl,
+      title,
+      durationSeconds: audio.durationSeconds,
+    };
 
-  await admin
-    .firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("generations")
-    .doc(generationId)
-    .set({
-      ...result,
-      prompt,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-
-  await incrementQuota(userId);
+    await admin
+      .firestore()
+      .collection("users")
+      .doc(userId)
+      .collection("generations")
+      .doc(generationId)
+      .set({
+        ...result,
+        prompt,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+  } catch (err) {
+    // Generation failed: refund the slot so the user is not penalised for our
+    // failure. Best-effort; rethrow original error.
+    await refundQuotaSlot(userId).catch(() => undefined);
+    throw err;
+  }
 
   res.status(200).json(result);
 }
@@ -77,7 +85,13 @@ async function assertSubscription(userId: string): Promise<void> {
   }
 }
 
-async function assertQuota(userId: string): Promise<void> {
+/**
+ * Atomically reads the current monthly usage counter and increments it if the
+ * user is still under the quota. Throws `resource-exhausted` otherwise. Using
+ * a Firestore transaction prevents the time-of-check / time-of-use race where
+ * two concurrent requests could both pass an independent read-then-write.
+ */
+async function reserveQuotaSlot(userId: string): Promise<void> {
   const monthKey = new Date().toISOString().slice(0, 7); // YYYY-MM
   const ref = admin
     .firestore()
@@ -85,14 +99,29 @@ async function assertQuota(userId: string): Promise<void> {
     .doc(userId)
     .collection("quotas")
     .doc(monthKey);
-  const snap = await ref.get();
-  const used = (snap.data()?.used as number | undefined) ?? 0;
-  if (used >= MONTHLY_QUOTA) {
-    throw new HttpsError("resource-exhausted", "quota_exceeded");
-  }
+
+  await admin.firestore().runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const used = (snap.data()?.used as number | undefined) ?? 0;
+    if (used >= MONTHLY_QUOTA) {
+      throw new HttpsError("resource-exhausted", "quota_exceeded");
+    }
+    tx.set(
+      ref,
+      {
+        used: used + 1,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+  });
 }
 
-async function incrementQuota(userId: string): Promise<void> {
+/**
+ * Decrement the quota counter when a previously-reserved generation could not
+ * complete. Floors at zero so we never go negative.
+ */
+async function refundQuotaSlot(userId: string): Promise<void> {
   const monthKey = new Date().toISOString().slice(0, 7);
   const ref = admin
     .firestore()
@@ -100,10 +129,19 @@ async function incrementQuota(userId: string): Promise<void> {
     .doc(userId)
     .collection("quotas")
     .doc(monthKey);
-  await ref.set(
-    { used: admin.firestore.FieldValue.increment(1), updatedAt: admin.firestore.FieldValue.serverTimestamp() },
-    { merge: true }
-  );
+  await admin.firestore().runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const used = (snap.data()?.used as number | undefined) ?? 0;
+    if (used <= 0) return;
+    tx.set(
+      ref,
+      {
+        used: used - 1,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+  });
 }
 
 interface UploadedAsset {
