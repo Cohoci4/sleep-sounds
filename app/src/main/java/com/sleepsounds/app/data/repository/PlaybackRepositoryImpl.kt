@@ -37,6 +37,17 @@ class PlaybackRepositoryImpl @Inject constructor(
         applicationScope.launch {
             subscriptionRepository.observeStatus().collect { latestSubscription = it }
         }
+        // The service signals back when the sleep timer fade-out has actually
+        // paused audio. Mirror that into our state so the UI no longer claims
+        // playback is active.
+        applicationScope.launch {
+            controller.timerCompletions.collect {
+                _state.update {
+                    it.copy(isPlaying = false, timer = SleepTimer.Disabled)
+                }
+                controller.applyState(_state.value)
+            }
+        }
     }
 
     override fun observeState(): StateFlow<PlaybackState> = state

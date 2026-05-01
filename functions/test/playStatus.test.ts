@@ -125,6 +125,21 @@ describe("buildVerifyResponse", () => {
     expect(result.tier).toBe("FREE");
   });
 
+  it("keeps premium while IN_GRACE_PERIOD even if expiryTime is in the past", () => {
+    // During a grace period Play sets `expiryTime` to the start of the grace
+    // window (already in the past). We must still grant access.
+    const result = buildVerifyResponse(
+      productId,
+      mapPlayStatus(productId, {
+        subscriptionState: "SUBSCRIPTION_STATE_IN_GRACE_PERIOD",
+        lineItems: [{ productId, expiryTime: "2025-12-01T00:00:00Z" }],
+      }),
+      FIXED_NOW
+    );
+    expect(result.tier).toBe("PREMIUM_MONTHLY");
+    expect(result.inGracePeriod).toBe(true);
+  });
+
   it("downgrades to FREE for ON_HOLD even with future expiry", () => {
     const result = buildVerifyResponse(
       productId,

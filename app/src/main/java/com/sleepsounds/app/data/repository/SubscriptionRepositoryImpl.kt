@@ -161,11 +161,28 @@ class SubscriptionRepositoryImpl @Inject constructor(
 
     private suspend fun ensureConnected() {
         if (connected && billingClient.isReady) return
+        // Suspend until the billing client reports a setup result. On
+        // success we resume normally; on failure we surface the error to
+        // callers instead of letting them silently call into a
+        // disconnected client and produce cryptic downstream failures.
         suspendCancellableCoroutine<Unit> { cont ->
             billingClient.startConnection(object : BillingClientStateListener {
                 override fun onBillingSetupFinished(billingResult: BillingResult) {
-                    connected = billingResult.responseCode == BillingClient.BillingResponseCode.OK
-                    if (cont.isActive) cont.resume(Unit)
+                    val ok = billingResult.responseCode == BillingClient.BillingResponseCode.OK
+                    connected = ok
+                    if (!cont.isActive) return
+                    if (ok) {
+                        cont.resume(Unit)
+                    } else {
+                        cont.resumeWith(
+                            Result.failure(
+                                IllegalStateException(
+                                    "Billing setup failed (code=${billingResult.responseCode}): " +
+                                        billingResult.debugMessage
+                                )
+                            )
+                        )
+                    }
                 }
                 override fun onBillingServiceDisconnected() { connected = false }
             })

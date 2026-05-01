@@ -68,13 +68,19 @@ export function mapPlayStatus(
  * Decide which tier the user gets based on the mapped status, the productId
  * they purchased, and the current wall-clock time. Returns the verification
  * payload we send back to the app.
+ *
+ * Access is granted when the subscription has not been revoked
+ * (EXPIRED/PAUSED/ON_HOLD) and either the paid period is still in the
+ * future or Play has reported the user is currently in the grace period
+ * (during which `expiryTime` is typically already in the past).
  */
 export function buildVerifyResponse(
   productId: string,
   status: PlayStatus,
   nowMillis: number
 ): VerifyResponse {
-  const accessActive = !status.expired && (status.expiryTimeMillis ?? 0) > nowMillis;
+  const periodActive = (status.expiryTimeMillis ?? 0) > nowMillis;
+  const accessActive = !status.expired && (periodActive || status.inGracePeriod);
   const tier = accessActive ? PRODUCT_TIERS[productId] ?? "FREE" : "FREE";
   return {
     tier,

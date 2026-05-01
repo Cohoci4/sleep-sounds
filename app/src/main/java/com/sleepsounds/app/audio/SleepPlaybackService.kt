@@ -135,6 +135,10 @@ class SleepPlaybackService : MediaSessionService() {
         }
         players.values.forEach { it.pause() }
         controller.scheduleTimer(SleepTimer.Disabled)
+        // Tell the repository that audio actually stopped so its observed
+        // PlaybackState reflects reality (otherwise the UI keeps reporting
+        // isPlaying=true and any future controller.applyState resumes audio).
+        controller.notifyTimerCompleted()
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? =

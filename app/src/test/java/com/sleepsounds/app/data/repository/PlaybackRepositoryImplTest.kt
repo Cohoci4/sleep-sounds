@@ -2,6 +2,7 @@ package com.sleepsounds.app.data.repository
 
 import app.cash.turbine.test
 import com.sleepsounds.app.audio.PlaybackController
+import com.sleepsounds.app.domain.model.SleepTimer
 import com.sleepsounds.app.domain.model.Sound
 import com.sleepsounds.app.domain.model.SoundSource
 import com.sleepsounds.app.domain.model.SubscriptionStatus
@@ -95,4 +96,25 @@ class PlaybackRepositoryImplTest {
             assertTrue(!state.isPlaying)
         }
     }
+
+    @Test
+    fun `controller timer-completion clears isPlaying and timer in repository state`() =
+        runTest(UnconfinedTestDispatcher()) {
+            statusFlow.value = SubscriptionStatus(SubscriptionTier.PREMIUM_MONTHLY)
+            val repo = newRepository(TestScope(UnconfinedTestDispatcher(testScheduler)))
+            repo.toggleSound(sample("a"))
+            repo.setSleepTimer(30)
+
+            // Sanity: state reflects active playback + active timer.
+            val before = repo.observeState().value
+            assertTrue(before.isPlaying)
+            assertTrue(before.timer is SleepTimer.Active)
+
+            // Service signals the fade-out completed.
+            controller.notifyTimerCompleted()
+
+            val after = repo.observeState().value
+            assertTrue(!after.isPlaying)
+            assertEquals(SleepTimer.Disabled, after.timer)
+        }
 }
