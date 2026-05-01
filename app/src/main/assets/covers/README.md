@@ -1,17 +1,12 @@
-# Cover artwork
+# Bundled covers
 
-Place 1024x1024 JPGs (or 512x512 minimum) here matching the file names
-referenced in `PresetCatalog.builtIn`:
+Placeholder 1024×1024 pastel gradients generated via ImageMagick
+(`scripts/regen_placeholder_assets.sh`). Replace each with AI artwork
+using the prompts from the project README (§5) before publishing.
 
-- `rain.jpg`
-- `fireplace.jpg`
-- `ocean.jpg`
-- `forest.jpg`
-- `singing_bowls.jpg`
-- `white_noise.jpg`
-
-These are loaded by `SoundCard` through Coil with the
-`file:///android_asset/covers/<name>.jpg` URI.
-
-Use the AI prompt suggestions from the project README — the Midjourney /
-DALL-E variants tuned for pastel relaxation aesthetics.
+* `rain.jpg`
+* `fireplace.jpg`
+* `ocean.jpg`
+* `forest.jpg`
+* `singing_bowls.jpg`
+* `white_noise.jpg`

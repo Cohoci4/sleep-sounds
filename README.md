@@ -245,16 +245,22 @@ prefix: `"Ambient relaxation soundscape, gentle, suitable for sleep. "`.
 
 ## 6. Bundled assets
 
-Six royalty-free MP3s are required at `app/src/main/assets/sounds/`:
+The repository ships with **placeholder** versions of the six bundled
+sounds and their cover art so the app runs out of the box:
 
-```
-rain.mp3 fireplace.mp3 ocean.mp3 forest.mp3 singing_bowls.mp3 white_noise.mp3
-```
+* `app/src/main/assets/sounds/{rain,fireplace,ocean,forest,singing_bowls,white_noise}.mp3`
+  — 60-second loopable ambient placeholders (pink/brown noise, sine
+  bells), 192 kbps stereo, generated with ffmpeg. Around 1.4 MB each.
+* `app/src/main/assets/covers/{...}.jpg` — 1024×1024 pastel-gradient
+  placeholder covers.
 
-Drop matching JPG covers (1024x1024 recommended) into
-`app/src/main/assets/covers/`.  Each file is referenced by
-`PresetCatalog.builtIn`. See `app/src/main/assets/sounds/README.md` for
-specifics. Tracks should be 60–120 s loops at 192 kbps.
+For production you should replace them with licensed audio loops and AI
+artwork — see the prompts in §5 above. Keep the file names identical
+(`PresetCatalog.builtIn` references them).
+
+> The placeholder generator command lives in
+> `scripts/regen_placeholder_assets.sh` (committed for reproducibility).
+> Tracks should be 60–120 s loops at 192 kbps.
 
 ---
 
