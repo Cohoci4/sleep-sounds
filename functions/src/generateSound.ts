@@ -3,13 +3,13 @@ import { HttpsError } from "firebase-functions/v2/https";
 import type { Request, Response } from "express";
 import axios from "axios";
 import { randomUUID } from "crypto";
+import { authenticate } from "./auth";
 import { sanitizeTitle, validatePrompt } from "./promptUtils";
 
 const MONTHLY_QUOTA = 20;
 
 interface GenerateRequest {
   prompt: string;
-  userId: string;
 }
 
 interface GenerateResponse {
@@ -24,16 +24,17 @@ export async function generateSoundHandler(
   req: Request,
   res: Response
 ): Promise<void> {
+  // The verified Firebase Auth uid is the only source of truth for the
+  // caller's identity; the request body never carries `userId`. This
+  // prevents an attacker who knows another user's UID from burning their
+  // monthly AI quota or creating generations under their account.
+  const userId = await authenticate(req);
   const body = req.body as Partial<GenerateRequest>;
   const validated = validatePrompt(body.prompt);
   if (!validated.ok) {
     throw new HttpsError("invalid-argument", "prompt must be 1..600 chars");
   }
   const prompt = validated.prompt;
-  const userId = (body.userId ?? "").trim();
-  if (userId.length === 0) {
-    throw new HttpsError("invalid-argument", "userId required");
-  }
 
   await assertSubscription(userId);
   // Atomically check + reserve a quota slot before doing any expensive AI

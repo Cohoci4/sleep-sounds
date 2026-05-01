@@ -184,6 +184,16 @@ buildConfigField(
 )
 ```
 
+### Authentication
+
+Both functions require an `Authorization: Bearer <Firebase ID token>`
+header. The Android client adds this automatically via
+`FirebaseAuthInterceptor` (registered in `NetworkModule`); it pulls a
+fresh ID token from `FirebaseAuth.getInstance().currentUser` on every
+call. The server derives the caller's user id from the verified token —
+the request body never carries `userId`. Calls without (or with an
+invalid) token are rejected with HTTP `401 unauthenticated`.
+
 ---
 
 ## 4. Google Play subscription products

@@ -50,8 +50,10 @@ class GenerationRepositoryImpl @Inject constructor(
 
     override fun generate(prompt: String): Flow<GenerationStage> = flow {
         emit(GenerationStage.SubmittingPrompt)
+        // Make sure we have a Firebase user; the OkHttp interceptor pulls the
+        // ID token from this user when attaching `Authorization: Bearer ...`.
         val userIdResult = authRepository.ensureSignedIn()
-        val userId = userIdResult.getOrElse {
+        userIdResult.getOrElse {
             emit(GenerationStage.Failed(it))
             return@flow
         }
@@ -62,7 +64,7 @@ class GenerationRepositoryImpl @Inject constructor(
             // Small delay so the UI stage is visible even on fast responses.
             delay(MIN_STAGE_VISIBILITY_MS)
             emit(GenerationStage.GeneratingAudio)
-            val response = api.generateSound(GenerationRequestDto(prompt, userId))
+            val response = api.generateSound(GenerationRequestDto(prompt))
             emit(GenerationStage.Finalizing)
             val sound = Sound(
                 id = response.id,

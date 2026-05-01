@@ -1,6 +1,7 @@
 package com.sleepsounds.app.di
 
 import com.sleepsounds.app.BuildConfig
+import com.sleepsounds.app.data.remote.FirebaseAuthInterceptor
 import com.sleepsounds.app.data.remote.api.SleepSoundsApi
 import dagger.Module
 import dagger.Provides
@@ -19,15 +20,19 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideOkHttpClient(authInterceptor: FirebaseAuthInterceptor): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
             level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.HEADERS
             else HttpLoggingInterceptor.Level.NONE
         }
+        // Auth header is added before logging so the redacted output still
+        // shows the Bearer scheme is present, and before the network call
+        // so the Cloud Functions can verify the ID token.
         return OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(120, TimeUnit.SECONDS)
             .writeTimeout(120, TimeUnit.SECONDS)
+            .addInterceptor(authInterceptor)
             .addInterceptor(logging)
             .build()
     }

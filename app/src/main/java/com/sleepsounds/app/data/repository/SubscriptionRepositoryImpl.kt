@@ -131,9 +131,12 @@ class SubscriptionRepositoryImpl @Inject constructor(
         withContext(ioDispatcher) {
             runCatching {
                 if (!BuildConfig.FIREBASE_ENABLED) return@runCatching
-                val userId = authRepository.ensureSignedIn().getOrThrow()
+                // Force sign-in so the OkHttp interceptor can mint an ID
+                // token for the Authorization header. The verified uid is
+                // derived server-side from that token, not from the body.
+                authRepository.ensureSignedIn().getOrThrow()
                 val response = api.get().checkSubscription(
-                    SubscriptionVerificationDto(userId, token, productId)
+                    SubscriptionVerificationDto(token, productId)
                 )
                 _status.value = SubscriptionStatus(
                     tier = runCatching { SubscriptionTier.valueOf(response.tier) }

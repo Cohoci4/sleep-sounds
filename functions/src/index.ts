@@ -58,6 +58,7 @@ function handleError(err: unknown, res: import("express").Response) {
 function httpStatusForCode(code: string): number {
   switch (code) {
     case "invalid-argument":
+    case "failed-precondition":
       return 400;
     case "permission-denied":
       return 403;
@@ -67,6 +68,8 @@ function httpStatusForCode(code: string): number {
       return 429;
     case "not-found":
       return 404;
+    case "deadline-exceeded":
+      return 504;
     default:
       return 500;
   }

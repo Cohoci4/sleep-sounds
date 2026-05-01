@@ -44,7 +44,7 @@ class GenerationRepositoryImplTest {
     @Test
     fun `generate emits the documented progression on success`() = runTest(UnconfinedTestDispatcher()) {
         coEvery { auth.ensureSignedIn() } returns Result.success("uid-1")
-        coEvery { api.generateSound(GenerationRequestDto("rain at dusk", "uid-1")) } returns
+        coEvery { api.generateSound(GenerationRequestDto("rain at dusk")) } returns
             GenerationResponseDto(
                 id = "gen-1",
                 title = "Twilight Rain",

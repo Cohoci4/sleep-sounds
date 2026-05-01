@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 import { HttpsError } from "firebase-functions/v2/https";
 import type { Request, Response } from "express";
 import { GoogleAuth } from "google-auth-library";
+import { authenticate } from "./auth";
 import {
   PRODUCT_TIERS,
   PlayStatus,
@@ -11,7 +12,6 @@ import {
 } from "./playStatus";
 
 interface VerifyRequest {
-  userId: string;
   purchaseToken: string;
   productId: string;
 }
@@ -20,12 +20,15 @@ export async function checkSubscriptionHandler(
   req: Request,
   res: Response
 ): Promise<void> {
+  // Caller identity comes only from the verified Firebase Auth ID token;
+  // never from the body. Otherwise an attacker could write subscription
+  // records to arbitrary user documents.
+  const userId = await authenticate(req);
   const body = req.body as Partial<VerifyRequest>;
-  const userId = (body.userId ?? "").trim();
   const token = (body.purchaseToken ?? "").trim();
   const productId = (body.productId ?? "").trim();
-  if (!userId || !token || !productId) {
-    throw new HttpsError("invalid-argument", "userId, purchaseToken and productId required");
+  if (!token || !productId) {
+    throw new HttpsError("invalid-argument", "purchaseToken and productId required");
   }
   if (!(productId in PRODUCT_TIERS)) {
     throw new HttpsError("invalid-argument", "unknown productId");

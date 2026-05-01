@@ -65,7 +65,10 @@ class SoundRepositoryImpl @Inject constructor(
                 .await()
             val sounds = snapshot.documents.mapNotNull { doc ->
                 val audioUrl = doc.getString("audioUrl") ?: return@mapNotNull null
-                val tier = Tier.valueOf(doc.getString("tier") ?: "FREE")
+                // A single corrupt or future-tier document must not abort the
+                // whole catalog refresh; fall back to FREE for unknown values.
+                val tier = runCatching { Tier.valueOf(doc.getString("tier") ?: "FREE") }
+                    .getOrDefault(Tier.FREE)
                 Sound(
                     id = doc.id,
                     title = doc.getString("title") ?: doc.id,

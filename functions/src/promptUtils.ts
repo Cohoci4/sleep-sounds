@@ -22,5 +22,7 @@ const MAX_TITLE_BODY = 60;
 export function sanitizeTitle(prompt: string): string {
   const trimmed = prompt.replace(/\s+/g, " ").trim();
   if (trimmed.length <= MAX_TITLE_BODY) return `${TITLE_PREFIX}${trimmed}`;
-  return `${TITLE_PREFIX}${trimmed.slice(0, MAX_TITLE_BODY - 3)}…`;
+  // The ellipsis "…" (U+2026) is a single code point, so we only need to
+  // reserve one character of the budget for it.
+  return `${TITLE_PREFIX}${trimmed.slice(0, MAX_TITLE_BODY - 1)}…`;
 }
