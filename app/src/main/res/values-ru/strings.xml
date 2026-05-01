@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SleepSounds</string>
+
+    <string name="tab_home">Главная</string>
+    <string name="tab_explore">Категории</string>
+    <string name="tab_profile">Профиль</string>
+
+    <string name="home_title">Звуки для сна</string>
+    <string name="home_featured">Рекомендуемые миксы</string>
+    <string name="action_create_sound">Создать звук</string>
+
+    <string name="explore_title">Категории</string>
+
+    <string name="profile_title">Профиль</string>
+    <string name="profile_subscription">Подписка</string>
+    <string name="profile_subscription_free">Бесплатный доступ</string>
+    <string name="profile_subscription_active">Sleep Premium активна</string>
+    <string name="profile_restore_purchases">Восстановить покупки</string>
+    <string name="profile_history">История ИИ</string>
+    <string name="profile_theme">Тема</string>
+    <string name="profile_default_timer">Таймер по умолчанию</string>
+    <string name="profile_quality">Качество загрузки</string>
+    <string name="profile_sign_out">Выйти</string>
+
+    <string name="theme_light">Светлая</string>
+    <string name="theme_dark">Тёмная</string>
+    <string name="theme_system">Системная</string>
+
+    <string name="quality_high">Высокое</string>
+    <string name="quality_economy">Экономное</string>
+
+    <string name="subscribe_title">Sleep Premium</string>
+    <string name="subscribe_monthly">Месячная подписка</string>
+    <string name="subscribe_yearly">Годовая подписка</string>
+
+    <string name="category_nature">Природа</string>
+    <string name="category_space">Космос</string>
+    <string name="category_cafe">Атмосфера кафе</string>
+    <string name="category_meditation">Медитация</string>
+    <string name="category_ai_exclusive">Эксклюзивы ИИ</string>
+
+    <string name="generate_title">Создать звук мечты</string>
+    <string name="generate_placeholder">Например, шум дождя в тропическом лесу с далёкими раскатами грома и тихой флейтой</string>
+    <string name="generate_action">Сгенерировать</string>
+    <string name="generate_action_reset">Начать заново</string>
+    <string name="generate_stage_submit">Отправляю запрос…</string>
+    <string name="generate_stage_cover">✨ Создаю обложку…</string>
+    <string name="generate_stage_audio">🎵 Сочиняю звук…</string>
+    <string name="generate_stage_finalize">⏳ Финальная обработка…</string>
+    <string name="generate_stage_done">Готово</string>
+    <string name="generate_stage_failed">Не удалось сгенерировать</string>
+
+    <string name="playback_channel_name">Воспроизведение для сна</string>
+    <string name="playback_channel_description">Фоновое воспроизведение релакс-звуков.</string>
+</resources>

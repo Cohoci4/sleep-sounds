@@ -8,6 +8,7 @@
   "main": "lib/index.js",
   "scripts": {
     "lint": "eslint --ext .ts src",
+    "test": "jest",
     "build": "tsc",
     "build:watch": "tsc --watch",
     "serve": "npm run build && firebase emulators:start --only functions",
@@ -22,9 +23,12 @@
     "google-auth-library": "^9.14.1"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "eslint": "^8.57.0",
+    "jest": "^30.3.0",
+    "ts-jest": "^29.4.9",
     "typescript": "^5.5.4"
   },
   "private": true

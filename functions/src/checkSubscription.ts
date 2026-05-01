@@ -2,25 +2,19 @@ import * as admin from "firebase-admin";
 import { HttpsError } from "firebase-functions/v2/https";
 import type { Request, Response } from "express";
 import { GoogleAuth } from "google-auth-library";
+import {
+  PRODUCT_TIERS,
+  PlayStatus,
+  VerifyResponse,
+  buildVerifyResponse,
+  mapPlayStatus,
+} from "./playStatus";
 
 interface VerifyRequest {
   userId: string;
   purchaseToken: string;
   productId: string;
 }
-
-interface VerifyResponse {
-  tier: string;
-  expiresAtEpochMs: number | null;
-  isAutoRenewing: boolean;
-  inGracePeriod: boolean;
-  onAccountHold: boolean;
-}
-
-const PRODUCT_TIERS: Record<string, string> = {
-  sleep_premium_monthly: "PREMIUM_MONTHLY",
-  sleep_premium_yearly: "PREMIUM_YEARLY",
-};
 
 export async function checkSubscriptionHandler(
   req: Request,
@@ -38,20 +32,7 @@ export async function checkSubscriptionHandler(
   }
 
   const status = await fetchPlayStatus(productId, token);
-  // A user retains premium access while the current billing period is paid for,
-  // even after they hit "Cancel" in Play. Account hold and pause states revoke
-  // access immediately. We consider the subscription valid if a non-revoked
-  // Play state is reported AND the expiry is still in the future.
-  const accessActive = !status.expired && (status.expiryTimeMillis ?? 0) > Date.now();
-  const tier = accessActive ? PRODUCT_TIERS[productId] : "FREE";
-
-  const result: VerifyResponse = {
-    tier,
-    expiresAtEpochMs: status.expiryTimeMillis,
-    isAutoRenewing: status.autoRenewing,
-    inGracePeriod: status.inGracePeriod,
-    onAccountHold: status.onAccountHold,
-  };
+  const result: VerifyResponse = buildVerifyResponse(productId, status, Date.now());
 
   await admin.firestore().collection("users").doc(userId).set(
     {
@@ -66,14 +47,6 @@ export async function checkSubscriptionHandler(
   );
 
   res.status(200).json(result);
-}
-
-interface PlayStatus {
-  expired: boolean;
-  expiryTimeMillis: number | null;
-  autoRenewing: boolean;
-  inGracePeriod: boolean;
-  onAccountHold: boolean;
 }
 
 async function fetchPlayStatus(productId: string, purchaseToken: string): Promise<PlayStatus> {
@@ -94,23 +67,8 @@ async function fetchPlayStatus(productId: string, purchaseToken: string): Promis
     `${encodeURIComponent(purchaseToken)}`;
   const res = await client.request<Record<string, unknown>>({ url, method: "GET" });
   const data = res.data;
-  const lineItems = (data?.lineItems as Array<Record<string, unknown>> | undefined) ?? [];
-  const matching = lineItems.find((it) => it.productId === productId) ?? lineItems[0];
-  const expiryTimeIso = (matching?.expiryTime as string | undefined) ?? null;
-  const expiryTimeMillis = expiryTimeIso ? Date.parse(expiryTimeIso) : null;
-  const subscriptionState = (data?.subscriptionState as string | undefined) ?? "SUBSCRIPTION_STATE_UNSPECIFIED";
-  // EXPIRED/PAUSED/ON_HOLD revoke access. CANCELED still grants access until
-  // the period ends; IN_GRACE_PERIOD grants access while the user updates
-  // payment.
-  const expired =
-    subscriptionState === "SUBSCRIPTION_STATE_EXPIRED" ||
-    subscriptionState === "SUBSCRIPTION_STATE_PAUSED" ||
-    subscriptionState === "SUBSCRIPTION_STATE_ON_HOLD";
-  return {
-    expired,
-    expiryTimeMillis,
-    autoRenewing: subscriptionState === "SUBSCRIPTION_STATE_ACTIVE",
-    inGracePeriod: subscriptionState === "SUBSCRIPTION_STATE_IN_GRACE_PERIOD",
-    onAccountHold: subscriptionState === "SUBSCRIPTION_STATE_ON_HOLD",
-  };
+  return mapPlayStatus(productId, {
+    subscriptionState: data?.subscriptionState as string | undefined,
+    lineItems: (data?.lineItems as Array<{ productId?: string; expiryTime?: string }> | undefined) ?? [],
+  });
 }

@@ -3,6 +3,7 @@ import { HttpsError } from "firebase-functions/v2/https";
 import type { Request, Response } from "express";
 import axios from "axios";
 import { randomUUID } from "crypto";
+import { sanitizeTitle, validatePrompt } from "./promptUtils";
 
 const MONTHLY_QUOTA = 20;
 
@@ -24,11 +25,12 @@ export async function generateSoundHandler(
   res: Response
 ): Promise<void> {
   const body = req.body as Partial<GenerateRequest>;
-  const prompt = (body.prompt ?? "").trim();
-  const userId = (body.userId ?? "").trim();
-  if (prompt.length === 0 || prompt.length > 600) {
+  const validated = validatePrompt(body.prompt);
+  if (!validated.ok) {
     throw new HttpsError("invalid-argument", "prompt must be 1..600 chars");
   }
+  const prompt = validated.prompt;
+  const userId = (body.userId ?? "").trim();
   if (userId.length === 0) {
     throw new HttpsError("invalid-argument", "userId required");
   }
@@ -299,8 +301,4 @@ async function uploadBuffer(
   return { publicUrl: `https://storage.googleapis.com/${bucket.name}/${path}` };
 }
 
-function sanitizeTitle(prompt: string): string {
-  const trimmed = prompt.replace(/\s+/g, " ").trim();
-  if (trimmed.length <= 60) return `Dream: ${trimmed}`;
-  return `Dream: ${trimmed.slice(0, 57)}…`;
-}
+

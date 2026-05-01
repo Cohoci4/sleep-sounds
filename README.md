@@ -281,7 +281,28 @@ artwork — see the prompts in §5 above. Keep the file names identical
 
 ---
 
-## 8. Continuous integration tips
+## 8. Privacy policy
+
+A starter privacy policy is bundled as
+[`PRIVACY_POLICY.md`](PRIVACY_POLICY.md). Google Play requires a
+publicly hosted policy URL for every subscription app — host the
+final version (after replacing the **TODO** placeholders) on your
+website and paste the URL into the Play Console listing under "App
+content → Privacy Policy".
+
+---
+
+## 9. Localisation
+
+The UI is fully translated into Russian via
+`app/src/main/res/values-ru/strings.xml`. To add another locale, copy
+that file into `values-<lang>/strings.xml` and translate every
+`<string>` value. All user-visible text comes from
+`stringResource(R.string.…)`, so no code changes are needed.
+
+---
+
+## 10. Continuous integration tips
 
 The repository ships with a working Gradle wrapper (8.10.2). On a fresh
 JDK 17 + Android SDK 34 host you can replicate the local build chain:
