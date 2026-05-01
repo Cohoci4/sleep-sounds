@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Public catalog of sounds is readable by anyone (anonymous auth or signed in).
+    match /sounds/{soundId} {
+      allow read: if true;
+      allow write: if false; // managed via console / functions only
+    }
+
+    // Per-user generations and quota are private to the owning user.
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false; // only Cloud Functions write here.
+
+      match /generations/{genId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
+      match /quotas/{monthKey} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Generated assets are public-read so the device can stream / download
+    // them without an auth round-trip; writes are restricted to Functions.
+    match /generations/{generationId}/{file=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+    // Anything else: deny.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

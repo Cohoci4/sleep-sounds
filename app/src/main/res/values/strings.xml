@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SleepSounds</string>
+
+    <string name="tab_home">Home</string>
+    <string name="tab_explore">Explore</string>
+    <string name="tab_profile">Profile</string>
+
+    <string name="home_title">Sleep Sounds</string>
+    <string name="home_featured">Recommended mixes</string>
+    <string name="action_create_sound">Create sound</string>
+
+    <string name="explore_title">Explore</string>
+
+    <string name="profile_title">Profile</string>
+    <string name="profile_subscription">Subscription</string>
+    <string name="profile_subscription_free">Free tier</string>
+    <string name="profile_subscription_active">Sleep Premium active</string>
+    <string name="profile_restore_purchases">Restore purchases</string>
+    <string name="profile_history">AI history</string>
+    <string name="profile_theme">Theme</string>
+    <string name="profile_default_timer">Default timer</string>
+    <string name="profile_quality">Download quality</string>
+    <string name="profile_sign_out">Sign out</string>
+
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_system">System</string>
+
+    <string name="quality_high">High</string>
+    <string name="quality_economy">Economy</string>
+
+    <string name="subscribe_title">Sleep Premium</string>
+    <string name="subscribe_monthly">Subscribe monthly</string>
+    <string name="subscribe_yearly">Subscribe yearly</string>
+
+    <string name="category_nature">Nature</string>
+    <string name="category_space">Space</string>
+    <string name="category_cafe">Cafe</string>
+    <string name="category_meditation">Meditation</string>
+    <string name="category_ai_exclusive">AI exclusives</string>
+
+    <string name="generate_title">Create dream sound</string>
+    <string name="generate_placeholder">e.g., rain in a tropical forest with distant thunder and a soft flute</string>
+    <string name="generate_action">Generate</string>
+    <string name="generate_action_reset">Start over</string>
+    <string name="generate_stage_submit">Submitting prompt…</string>
+    <string name="generate_stage_cover">✨ Creating cover image…</string>
+    <string name="generate_stage_audio">🎵 Composing audio…</string>
+    <string name="generate_stage_finalize">⏳ Final touches…</string>
+    <string name="generate_stage_done">Ready</string>
+    <string name="generate_stage_failed">Generation failed</string>
+
+    <string name="playback_channel_name">Sleep playback</string>
+    <string name="playback_channel_description">Background playback of relaxation sounds.</string>
+</resources>
